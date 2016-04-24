@@ -1,4 +1,68 @@
 #### pshandansible
+#####creating environment
+```
+Vagrant.configure(1) do |config|
+    config.vm.define "host1" do |host1|
+        host1.vm.box="ubuntu/trusty64"
+        host1.vm.hostname="host1"
+        host1.vm.network "private_network",ip: "192.168.11.11"
+    end
+    config.vm.define "host2" do |host2|
+        host1.vm.box="ubuntu/trusty64"
+        host1.vm.hostname="host2"
+        host1.vm.network "private_network",ip: "192.168.11.22"
+    end
+    config.vm.define "host3" do |host3|
+        host1.vm.box="nrel/CentOS-6.5"
+        host1.vm.hostname="host3"
+        host1.vm.network "private_network",ip: "192.168.11.33"
+        host1.vm.network "forwarded_port",guest:80,host:8080
+    end
+end
+```
+then
+```
+vagrant up
+vboxmanage list runningvms
+```
+connect:
+```
+vagrant ssh host1
+```
+#####install ansible
+on yum, build source code:
+```
+sudo yum install python-setuptools
+sudo easy_install pip
+sudo yum install python-devel
+sudo pip install ansible
+```
+######Testing lab (using naive way)
+```
+ansible 192.168.11.11 -i inventory -u vagrant -m ping -k    (-k interactive prompt)
+```
+by default, no command = command command
+```
+ansible 192.168.11.11 -i inventory -u vagrant -a command "/sbin/root"
+ansible 192.168.11.11 -i inventory -u vagrant -a "/sbin/root"
+```
+difference between command and shell:  
+command is running an executable inside of python, shell can use env variable
+#####inventory
+######configuration
+ansible.cfg
+```
+[defaults]
+host_key_checking=False
+```
+```
+vim ~/.ssh/known_hosts
+```
+######working with python3-based system
+set inventory file
+```
+ansible_python_interpreter=/usr/bin/python2.7
+```
 #####module
 ######funda
 check docs
@@ -17,6 +81,28 @@ ansible group1:group2 -i inventory -m yum -a "name=httpd state=present" --sudo
 ```
 ansible gp -i inventory -m setup -a "filter=ansible_eth*"   //eth0,eth1,eth2
 ```
+#####playbook
+######logic
+```
+tasks:
+- shell: /usr/bin/whoami
+  register: username
+- file: path=/home/myfile owner={{username}}
+- debug: var=username
+vars_prompt:
+- name: a
+  propmt:
+```
+using when
+```
+tasks:
+- command: ls /path    //may not exist!
+  register: res
+  ignore_errors: yes
+- debug: msg="fail"
+  when: res|failed            // three status: success, failed, skipped
+```
+
 
 #####role 
 ######role basic
